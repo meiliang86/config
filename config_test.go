@@ -374,3 +374,25 @@ rpc:
 	require.NoError(t, v.Populate(cfg))
 	require.Equal(t, 4324, int(*cfg.Outbounds[0].TChannel.Port))
 }
+
+func TestNewYAMLProviderFromBytesWithExpand(t *testing.T) {
+	t.Parallel()
+	txt := []byte(`
+one:
+  two: hello
+  owner: ${OWNER_EMAIL}
+`)
+
+	f := func(key string) (string, bool) {
+		if key == "OWNER_EMAIL" {
+			return "hello@there.yasss", true
+		}
+
+		return "", false
+	}
+
+	cfg, err := NewYAMLProviderFromBytesWithExpand(f, txt)
+	require.NoError(t, err, "Can't create a YAML provider")
+
+	assert.Equal(t, "map[one:map[two:hello owner:hello@there.yasss]]", cfg.Get(Root).String())
+}
